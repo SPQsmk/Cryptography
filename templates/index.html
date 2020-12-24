@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='img/lock.png') }}" type="image/png">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat&family=Noto+Sans&family=Open+Sans:wght@300&display=swap"
+        rel="stylesheet">
+    <title>First lab</title>
+</head>
+
+<body>
+
+    <header class="header">
+        <div class="header__inner">
+            <div class="header__logo">Encoder</div>
+            <nav class="nav">
+                <a class="nav__link active" href="#">Главная</a>
+                <a class="nav__link" href="\firstlab">Задание 1</a>
+                <a class="nav__link" href="\secondlab">Задание 2</a>
+                <a class="nav__link" href="\thirdlab">Задание 3</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="main__inner">
+            <h1 class="main__title">Encoder</h1>
+            <h2 class="main__subtitle">Flask проект для демонстрации лабораторных работ</h2>
+        </div>
+    </main>
+
+    <footer class="slider">
+        <div class="slider__inner" id="slider__inner"></div>
+    </footer>
+</body>
+
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='img/lock.png') }}" type="image/png">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat&family=Noto+Sans&family=Open+Sans:wght@300&display=swap"
+        rel="stylesheet">
+    <title>First lab</title>
+</head>
+
+<body>
+
+    <header class="header">
+        <div class="header__inner">
+            <div class="header__logo">Encoder</div>
+            <nav class="nav">
+                <a class="nav__link" href="\index">Главная</a>
+                <a class="nav__link" href="\firstlab">Задание 1</a>
+                <a class="nav__link active" href="#">Задание 2</a>
+                <a class="nav__link" href="\thirdlab">Задание 3</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="main__inner">
+            <div class="main__container">
+                <div class="form">
+                    <div class="form__inner" id="form__inner">
+                        <div class="form__title">Выберите задание</div>
+                    </div>
+                </div>
+
+                <nav class="lab__nav" id="lab__nav">
+                    <div class="radio">
+                        <input class="radio__nav" name="task" type="radio" id="radio_1" value="21">
+                        <label class="radio__label" for="radio_1">1</label>
+                    </div>
+                    <div class="radio">
+                        <input class="radio__nav" name="task" type="radio" id="radio_2" value="22">
+                        <label class="radio__label" for="radio_2">2</label>
+                    </div>
+                    <div class="radio">
+                        <input class="radio__nav" name="task" type="radio" id="radio_3" value="23">
+                        <label class="radio__label" for="radio_3">3</label>
+                    </div>
+                    <div class="radio">
+                        <input class="radio__nav" name="task" type="radio" id="radio_4" value="24">
+                        <label class="radio__label" for="radio_4">4</label>
+                    </div>
+                    <div class="radio">
+                        <input class="radio__nav" name="task" type="radio" id="radio_5" value="25">
+                        <label class="radio__label" for="radio_5">5</label>
+                    </div>
+                    <div class="radio">
+                        <input class="radio__nav" name="task" type="radio" id="radio_6" value="26">
+                        <label class="radio__label" for="radio_6">6</label>
+                    </div>
+                    <div class="radio">
+                        <input class="radio__nav" name="task" type="radio" id="radio_7" value="27">
+                        <label class="radio__label" for="radio_7">7</label>
+                    </div>
+                    <div class="radio">
+                        <input class="radio__nav" name="task" type="radio" id="radio_8" value="28">
+                        <label class="radio__label" for="radio_8">8</label>
+                    </div>
+                </nav>
+            </div>
+        </div>
+    </main>
+
+    <footer class="slider">
+        <div class="slider__inner" id="slider__inner"></div>
+    </footer>
+
+    <script type="text/javascript" src="{{ url_for('static', filename='js/index.js') }}"></script>
+</body>
+
+</html>
