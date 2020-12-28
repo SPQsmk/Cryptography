@@ -4,7 +4,7 @@ class Rijndael:
         key_len = {4 / 6 / 8}
         block_len = {4 / 6 / 8}
         '''
-        self.S = bytearray(256)
+        self.S = bytearray([0x63] * 256)
         self.INV_S = bytearray(256)
         self.R_CON = bytearray(32)
         self.gen_s()
@@ -59,29 +59,27 @@ class Rijndael:
         return self.to_block(state)
 
     def key_expansion(self, key):
-        keys = [[] for i in range(self.Nb * (self.Nr + 1))]
-
-        for i in range(self.Nk):
-            keys[i] = [key[4 * i + j] for j in range(4)]
+        keys = [[key[4 * i + j] for j in range(4)] for i in range(self.Nk)]
 
         for i in range(self.Nk, self.Nb * (self.Nr + 1)):
-            word = keys[i - 1]
             if i % self.Nk == 0:
-                temp = [self.S[x] for x in self.cycle_shift(word, -1)]
+                temp = [self.S[x] for x in self.cycle_shift(keys[i - 1], -1)]
                 temp[0] ^= self.R_CON[i // self.Nk]
-            elif self.Nk > 6 and i % self.Nk == 4:
+            elif (i % self.Nk == 4) and (self.Nk > 6):
                 temp = [self.S[x] for x in temp]
-            keys[i] = [keys[i - self.Nk][j] ^ temp[j] for j in range(4)]
+            keys.append([keys[i - self.Nk][j] ^ temp[j] for j in range(4)])
 
         return keys
 
     def sub_bytes(self, state, dec=False):
+        if dec:
+            S = self.INV_S
+        else:
+            S = self.S
+
         for i in range(4):
             for j in range(self.Nb):
-                if dec:
-                    state[i][j] = self.INV_S[state[i][j]]
-                else:
-                    state[i][j] = self.S[state[i][j]]
+                state[i][j] = S[state[i][j]]
 
     def shift_rows(self, state, dec=False):
         if dec:
@@ -93,22 +91,18 @@ class Rijndael:
             state[i] = self.cycle_shift(state[i], c[i - 1])
 
     def mix_columns(self, state, dec=False):
-        b = [0 for _ in range(4)]
+        mul = self.gmul
+
+        if dec:
+            c = [0x0E, 0x0B, 0x0D, 0x09]
+        else:
+            c = [0x02, 0x03, 0x01, 0x01]
 
         for i in range(self.Nb):
-            if dec:
-                b[0] = self.gmul(0x0E, state[0][i]) ^ self.gmul(0x0B, state[1][i]) ^ self.gmul(0x0D, state[2][i]) ^ self.gmul(0x09, state[3][i])
-                b[1] = self.gmul(0x09, state[0][i]) ^ self.gmul(0x0E, state[1][i]) ^ self.gmul(0x0B, state[2][i]) ^ self.gmul(0x0D, state[3][i])
-                b[2] = self.gmul(0x0D, state[0][i]) ^ self.gmul(0x09, state[1][i]) ^ self.gmul(0x0E, state[2][i]) ^ self.gmul(0x0B, state[3][i])
-                b[3] = self.gmul(0x0B, state[0][i]) ^ self.gmul(0x0D, state[1][i]) ^ self.gmul(0x09, state[2][i]) ^ self.gmul(0x0E, state[3][i])
-            else:
-                b[0] = self.gmul(0x02, state[0][i]) ^ self.gmul(0x03, state[1][i]) ^ state[2][i] ^ state[3][i]
-                b[1] = state[0][i] ^ self.gmul(0x02, state[1][i]) ^ self.gmul(0x03, state[2][i]) ^ state[3][i]
-                b[2] = state[0][i] ^ state[1][i] ^ self.gmul(0x02, state[2][i]) ^ self.gmul(0x03, state[3][i])
-                b[3] = self.gmul(0x03, state[0][i]) ^ state[1][i] ^ state[2][i] ^ self.gmul(0x02, state[3][i])
-
+            st = [state[j][i] for j in range(4)]
             for j in range(4):
-                state[j][i] = b[j]
+                state[j][i] = mul(c[0], st[0]) ^ mul(c[1], st[1]) ^ mul(c[2], st[2]) ^ mul(c[3], st[3])
+                c = self.cycle_shift(c, 1)
 
     def add_round_key(self, state, w):
         for i in range(4):
@@ -126,12 +120,7 @@ class Rijndael:
         return 10
 
     def to_state(self, block):
-        state = []
-
-        for i in range(4):
-            state.append([block[i + 4 * j] for j in range(self.Nb)])
-
-        return state
+        return [[block[i + 4 * j] for j in range(self.Nb)] for i in range(4)]
 
     def to_block(self, state):
         block = bytearray(4 * self.Nb)
@@ -143,27 +132,25 @@ class Rijndael:
         return block
 
     def gen_s(self):
-        p, q = 1, 1
+        p = q = 1
 
         while True:
-            if p & 0x80 == 0x80:
-                p ^= ((p << 1) ^ 0x11B) & 0xFF
+            if p & 0x80 != 0:
+                p ^= (p << 1) ^ 0x11B
             else:
-                p ^= (p << 1) & 0xFF
+                p ^= p << 1
 
             for i in [1, 2, 4]:
-                q ^= (q << i)
+                q ^= (q << i) & 0xFF
 
-            if q & 0x80 == 0x80:
+            if q & 0x80 != 0:
                 q ^= 0x09
-            q &= 0xFF
 
-            self.S[p] = ((q ^ self.cycle_byte(q, 1) ^ self.cycle_byte(q, 2) ^ self.cycle_byte(q, 3) ^ self.cycle_byte(q, 4)) ^ 0x63) & 0xFF
+            for i in range(5):
+                self.S[p] ^= self.cycle_byte(q, i)
 
             if p == 1:
                 break
-
-        self.S[0] = 0x63
 
     def cycle_byte(self, x, shift):
         return ((x << shift) | (x >> (8 - shift))) & 0xFF
@@ -173,12 +160,10 @@ class Rijndael:
             self.INV_S[self.S[i]] = i
 
     def gen_r_con(self):
-        x = 0x02
+        self.R_CON[0] = 0x01
 
-        self.R_CON[0], self.R_CON[1] = 1, x
-
-        for i in range(2, 32):
-            self.R_CON[i] = self.gmul(self.R_CON[i - 1], x)
+        for i in range(1, 32):
+            self.R_CON[i] = self.gmul(self.R_CON[i - 1], 0x02)
 
     def gmul(self, a, b):
         p = 0
@@ -186,12 +171,16 @@ class Rijndael:
         for _ in range(8):
             if (b & 1) != 0:
                 p ^= a
+
             is_high = (a & 0x80) != 0
             a <<= 1
             a &= 0xFF
+
             if is_high:
                 a ^= 0x1B
+
             b >>= 1
+
         return p
 
 
@@ -202,25 +191,15 @@ class ECB():
 
     def encode(self, b_arr):
         blocks = [b_arr[i: i + self.bs] for i in range(0, len(b_arr), self.bs)]
-        if len(blocks) > 0:
-            blocks[-1] = int.from_bytes(blocks[-1], byteorder='little').to_bytes(self.bs, byteorder='little')
+        blocks[-1] = int.from_bytes(blocks[-1], byteorder='little').to_bytes(self.bs, byteorder='little')
 
-        enc = []
-        for block in blocks:
-            enc.append(self._aes.encode_block(block))
-
-        return enc
+        return [self._aes.encode_block(block) for block in blocks]
 
     def decode(self, b_arr):
         blocks = [b_arr[i: i + self.bs] for i in range(0, len(b_arr), self.bs)]
-        if len(blocks) > 0:
-            blocks[-1] = int.from_bytes(blocks[-1], byteorder='little').to_bytes(self.bs, byteorder='little')
+        blocks[-1] = int.from_bytes(blocks[-1], byteorder='little').to_bytes(self.bs, byteorder='little')
 
-        dec = []
-        for block in blocks:
-            dec.append(self._aes.decode_block(block))
-
-        return dec
+        return [self._aes.decode_block(block) for block in blocks]
 
 
 class CBC():
@@ -231,8 +210,7 @@ class CBC():
 
     def encode(self, b_arr):
         blocks = [b_arr[i: i + self.bs] for i in range(0, len(b_arr), self.bs)]
-        if len(blocks) > 0:
-            blocks[-1] = int.from_bytes(blocks[-1], byteorder='little').to_bytes(self.bs, byteorder='little')
+        blocks[-1] = int.from_bytes(blocks[-1], byteorder='little').to_bytes(self.bs, byteorder='little')
         prev = self._c0
 
         enc = []
@@ -244,8 +222,7 @@ class CBC():
 
     def decode(self, b_arr):
         blocks = [b_arr[i: i + self.bs] for i in range(0, len(b_arr), self.bs)]
-        if len(blocks) > 0:
-            blocks[-1] = int.from_bytes(blocks[-1], byteorder='little').to_bytes(self.bs, byteorder='little')
+        blocks[-1] = int.from_bytes(blocks[-1], byteorder='little').to_bytes(self.bs, byteorder='little')
         prev = self._c0
 
         dec = []
@@ -264,8 +241,7 @@ class OFB():
 
     def encode(self, b_arr):
         blocks = [b_arr[i: i + self.bs] for i in range(0, len(b_arr), self.bs)]
-        if len(blocks) > 0:
-            blocks[-1] = int.from_bytes(blocks[-1], byteorder='little').to_bytes(self.bs, byteorder='little')
+        blocks[-1] = int.from_bytes(blocks[-1], byteorder='little').to_bytes(self.bs, byteorder='little')
         prev = self._c0
 
         enc = []
@@ -287,8 +263,7 @@ class CFB():
 
     def encode(self, b_arr):
         blocks = [b_arr[i: i + self.bs] for i in range(0, len(b_arr), self.bs)]
-        if len(blocks) > 0:
-            blocks[-1] = int.from_bytes(blocks[-1], byteorder='little').to_bytes(self.bs, byteorder='little')
+        blocks[-1] = int.from_bytes(blocks[-1], byteorder='little').to_bytes(self.bs, byteorder='little')
         prev = self._c0
 
         enc = []
@@ -300,8 +275,7 @@ class CFB():
 
     def decode(self, b_arr):
         blocks = [b_arr[i: i + self.bs] for i in range(0, len(b_arr), self.bs)]
-        if len(blocks) > 0:
-            blocks[-1] = int.from_bytes(blocks[-1], byteorder='little').to_bytes(self.bs, byteorder='little')
+        blocks[-1] = int.from_bytes(blocks[-1], byteorder='little').to_bytes(self.bs, byteorder='little')
         prev = self._c0
 
         dec = []

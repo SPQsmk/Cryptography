@@ -549,6 +549,9 @@ def rsa_cipher():
                 key_value = request.files['key']
                 key = key_value.read()
 
+                if len(key) != 512:
+                    raise ValueError("Incorrect key")
+
                 d = int.from_bytes(key[:256], byteorder='little')
                 n = int.from_bytes(key[256:], byteorder='little')
 
