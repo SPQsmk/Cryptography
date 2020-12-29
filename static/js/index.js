@@ -158,6 +158,9 @@ function communicate() {
             form.append("file", message.files[0])
             xhr.open("POST", "http://127.0.0.1:5000/" + apiTask)
             xhr.send(form)
+            xhr.onerror = function() {
+                res.innerHTML = "Не удаляй файл"
+            }
             xhr.onload = function () {
                 js = JSON.parse(xhr.response)
                 if (js["path"] == undefined) {
@@ -180,6 +183,9 @@ function communicate() {
             xhr.open("POST", "http://127.0.0.1:5000/" + apiTask)
             xhr.setRequestHeader("Content-type", "application/json")
             xhr.send(json)
+            xhr.onerror = function() {
+                res.innerHTML = "Не удаляй файл"
+            }
             xhr.onload = function () {
                 js = JSON.parse(xhr.response)
                 if (js["path"] == undefined) {
@@ -208,6 +214,9 @@ function communicate() {
     xhr.open("POST", "http://127.0.0.1:5000/" + apiTask)
     if (apiTask === "rc4" || apiTask === "des" || apiTask === "vernam" || apiTask === "rijndael") {
         xhr.send(form)
+        xhr.onerror = function() {
+            res.innerHTML = "Не удаляй файл"
+        }
         xhr.onload = function () {
             js = JSON.parse(xhr.response)
             if (js["path"] == undefined) {
@@ -219,6 +228,9 @@ function communicate() {
     } else {
         xhr.setRequestHeader("Content-type", "application/json")
         xhr.send(json)
+        xhr.onerror = function() {
+            res.innerHTML = "Не удаляй файл"
+        }
         xhr.onload = function () {
             js = JSON.parse(xhr.response)
             if (js["res"] == undefined) {
